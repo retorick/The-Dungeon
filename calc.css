@@ -1,0 +1,65 @@
+body {
+    font-family:verdana, arial, helvetica;
+    font-size:8pt;
+}
+h1 {
+    color:#ccc;
+    text-shadow:1px 1px 1px #333;
+    font-size:12pt;
+}
+.container {
+    width:600px;
+    margin:0 auto;
+}
+.container p {
+    padding:3px;
+}
+#mechanics {
+    float:left;
+    width:35%;
+}
+#calculations {
+    float:left;
+    width:60%;
+}
+label:hover {
+    background:#eaf2d3;
+}
+label {
+    display:block;
+    cursor:pointer;
+    float:left;
+    margin-right:20px;
+}
+label > span {
+    display:block;
+    padding:5px;
+    font-weight:bold;
+    color:white;
+    text-shadow:1px 1px 1px #333;
+}
+label > input {
+    display:block;
+    width:75px;
+}
+table {
+    background:#EAF2D3;
+    border:1px solid #98BF21;
+    border-collapse: collapse;
+}
+td, th {
+    border:1px solid #98BF21;
+    padding:3px;
+    font-family:verdana, arial, helvetica;
+    font-size:8pt;
+    color:#333333;
+}
+td:nth-child(1) {
+    text-align:right;
+}
+.field {
+    font-family:arial, helvetica;
+    font-size:8pt;
+    color:#333333;
+    text-align:right;
+}
