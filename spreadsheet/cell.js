@@ -1,43 +1,11 @@
 function Cell(id) {
-    // array of cells that are listening to current cell.
     this.listeners = [];
     this.id = id;
     this.value = '';
     this.formula = '';
-    // list gathered by parser each time a cell changes.
     this.cellsToListenTo = [];
-    // currently unused
     this.listeningTo = [];
 }
-
-
-// go through a cell's listeners and provide each with updated value.
-Cell.prototype.propagateChange = function() {
-    var cell;
-    // here, we may want to compute the value based on the formula, not rely on a "value" property.
-    var newValue = this.value;
-    for (ndx in this.listeners) {
-        cell = this.listeners[ndx];
-        newValue = Parser.parse(cell.formula);
-        cell.updateValue(newValue);
-    }
-    return this;
-};
-
-
-Cell.prototype.beginListening = function(cell) {
-    var that = this;
-    var alreadyListening = cell.listeners.some(
-        function(c) {
-            return that === c;
-        }
-    );
-    if (!alreadyListening) {
-        cell.listeners.push(this);
-    }
-    return this;
-};
-
 
 Cell.prototype.updateValue = function(newValue) {
     // Thew new value actually needs to update the formula, not the value itself.
@@ -57,13 +25,6 @@ Cell.prototype.updateFormula = function(newFormula) {
         }
     );
 };
-
-
-Cell.prototype.refresh = function() {
-    document.getElementById(this.id).innerHTML = this.value;
-};
-
-
 
 
 CellManager = (function() {
@@ -86,13 +47,12 @@ CellManager = (function() {
         checkStatus: function(obj) {
             var id = obj.id;
             var currentFormula = this.cells[id].formula;
-            var newFormula = obj.innerHTML;
+            var newFormula = obj.innerHTML = obj.innerHTML.toUpperCase();
             var newValue;
             if (newFormula.charAt(0) === '=') {
-                newFormula = newFormula.toUpperCase();
                 newFormula = newFormula.substr(1);
-                newValue = Parser.parse(newFormula);
-                this.cells[id].cellsToListenTo = Parser.cellsReferenced;
+//                newValue = Parser.parse(newFormula);
+//                this.cells[id].cellsToListenTo = Parser.cellsReferenced;
             }
             else {
                 newValue = newFormula;
@@ -112,4 +72,49 @@ CellManager = (function() {
     };
 })();
 
-CellManager.initializeCells();
+
+// This stuff goes into cellmanager.js
+CellManager.activateCurrentCell = function() {
+    var id = CellNavigation.currentCellId,
+        el = document.getElementById(id),
+        cell = this.cells[id],
+        formula = cell.formula,
+        value = cell.value;
+    el.contentEditable = true;
+    // value is what the cell displays; formula is the calculation that produces value.
+    // if the cell is active, it needs to show the formula.
+    if (value != formula) {
+        el.innerHTML = '=' + formula;
+    }
+    else {
+        el.innerHTML = value;
+    }
+    el.focus();
+    CellNavigation.isCurrentCellActive = true;
+};
+
+
+CellManager.deActivateCurrentCell = function() {
+    var cell = document.getElementById(CellNavigation.currentCellId);
+    cell.contentEditable = false;
+    cell.blur();
+    CellNavigation.isCurrentCellActive = false;
+};
+
+
+// this method is only used when a symbol key (rather than a navigation key) activates a cell.
+CellManager.clearCurrentCellDisplay = function() {
+    var id = CellNavigation.currentCellId,
+        el = document.getElementById(id);
+    el.innerHTML = '';
+};
+
+
+CellManager.clearCurrentCell = function() {
+    var id = CellNavigation.currentCellId,
+        el = document.getElementById(id);
+    el.innerHTML = '';
+    CellManager.checkStatus(el);    
+};
+
+

@@ -1,52 +1,155 @@
-CellNavigation = (function() {
-    var coords;
+/*
+ * CellNavigation object:  handles arrow key navigation.
+ */
+CellCtrls = (function() {
+    return {
+        // these function as scoped "constants" for the currentCellActivationStatus property.
+        INACTIVE: 0,
+        BY_ENTER_KEY: 1,
+        BY_SYMBOL_KEY: 2,
 
-    function _getCoords(cellObj) {
-        var id = cellObj.id,
+        // so I don't have to worry about the above stuff not having the trailing comma.
+        zenzizenzizenzic: null
+    };
+})();
+
+
+CellNavigation = (function() {
+
+    // Get x, y coordinates for current cell.  Current cell is stored in global CellNavigation object.
+    function _getCoords() {
+        // by default, get coordinates of current cell; however, if a different id is specified, get coordinates for that cell instead.
+        var id = arguments.length == 1 ? arguments[0] : CellNavigation.currentCellId,
             x = id.charCodeAt(0) - 64,
             y = id.substr(1);
-        coords = { x: x, y: 1*y };
-        return coords;
+        return { x: x, y: 1*y };
+    }
+
+    // move cell selector from current cell to new one.  identify cells by id attribute of span element.
+    function _moveCellSelector(toId) {
+        var fromCell = document.getElementById(CellNavigation.currentCellId).parentNode,
+            toCell = document.getElementById(toId).parentNode;
+        fromCell.style.backgroundColor = '';
+        toCell.style.backgroundColor = '#e5eccc';
+        CellNavigation.currentCellId = toId;
     }
 
     function _goToCell(coords) {
         var letter = String.fromCharCode(coords.x + 64),
             number = coords.y,
             targetId = letter + number;
-        document.getElementById(targetId).focus();
+        _moveCellSelector(targetId);
     }
 
     return {
-        processLtArrow: function(cellObj) {
-            coords = _getCoords(cellObj);
-            if (coords.x > 1) {
-                coords.x--;
-                _goToCell(coords);
-            }
+        currentCellId: 'A1',
+
+        currentCellActivationStatus: CellCtrls.INACTIVE, // INACTIVE || BY_ENTER_KEY || BY_SYMBOL_KEY
+        isCurrentCellActive: false,
+
+        deactivateCurrentCell: function() {
+            var cell = document.getElementById(CellNavigation.currentCellId);
+            cell.contentEditable = false;
+            cell.blur();
+            CellNavigation.isCurrentCellActive = false;
+            CellNavigation.currentCellActivationStatus = CellCtrls.INACTIVE;
         },
 
-        processUpArrow: function(cellObj) {
-            coords = _getCoords(cellObj);
-            if (coords.y > 1) {
-                coords.y--;
-                _goToCell(coords);
+        activateCurrentCell: function() {
+            // how the current cell was activated.  default is by symbol key.
+            var howActivated = arguments.length === 1 ? arguments[0] : CellCtrls.BY_SYMBOL_KEY;
+
+            var id = CellNavigation.currentCellId,
+                el = document.getElementById(id),
+                cell = CellManager.cells[id],
+                formula = cell.formula,
+                value = cell.value;
+            el.contentEditable = true;
+            // value is what the cell displays; formula is the calculation that produces value.
+            // if the cell is active, it needs to show the formula.
+            if (value != formula) {
+                el.innerHTML = '=' + formula;
             }
+            else {
+                el.innerHTML = value;
+            }
+            el.focus();
+            CellNavigation.isCurrentCellActive = true;
+            CellNavigation.currentCellActivationStatus = howActivated;
         },
 
-        processRtArrow: function(cellObj) {
-            coords = _getCoords(cellObj);
-            if (coords.x < spreadsheetParams.cols) {
-                coords.x++;
-                _goToCell(coords);
-            }
+        clearCurrentCellDisplay: function() {
+            var id = CellNavigation.currentCellId,
+                el = document.getElementById(id);
+            el.innerHTML = '';
         },
 
-        processDownArrow: function(cellObj) {
-            coords = _getCoords(cellObj);
-            if (coords.y < spreadsheetParams.rows) {
-                coords.y++;
-                _goToCell(coords);
+        clearCurrentCell: function() {
+            var id = CellNavigation.currentCellId,
+                el = document.getElementById(id);
+            el.innerHTML = '';
+            CellManager.checkStatus(el);    
+        },
+
+
+        goToCell: function(id) {
+            var cell = CellManager.cells[id];
+            var coords = _getCoords();
+            _goToCell(_getCoords(id));
+        },
+
+        goLeft: function() {
+            if (CellNavigation.currentCellActivationStatus !== CellCtrls.BY_ENTER_KEY) {
+                CellNavigation.deactivateCurrentCell();
+                var coords = _getCoords();
+                if (coords.x > 1) {
+                    coords.x--;
+                    _goToCell(coords);
+                }
+                // false:  we're hijacking the keystroke for our own nefarious purposes.
+                return false;
             }
+            // true:  allow the browser to handle the keystroke in ordinary fashion.
+            return true;
+        },
+
+        goUp: function() {
+            if (CellNavigation.currentCellActivationStatus !== CellCtrls.BY_ENTER_KEY) {
+                CellNavigation.deactivateCurrentCell();
+                var coords = _getCoords();
+                if (coords.y > 1) {
+                    coords.y--;
+                    _goToCell(coords);
+                }
+                return false;
+            }
+            return true;
+        },
+
+        goRight: function() {
+            if (CellNavigation.currentCellActivationStatus !== CellCtrls.BY_ENTER_KEY) {
+                CellNavigation.deactivateCurrentCell();
+                var coords = _getCoords();
+                if (coords.x < spreadsheetParams.cols) {
+                    coords.x++;
+                    _goToCell(coords);
+                }
+                return false;
+            }
+            return true;
+        },
+
+        goDown: function() {
+            if (CellNavigation.currentCellActivationStatus !== CellCtrls.BY_ENTER_KEY) {
+                CellNavigation.deactivateCurrentCell();
+                var coords = _getCoords();
+                if (coords.y < spreadsheetParams.rows) {
+                    coords.y++;
+                    _goToCell(coords);
+                }
+                return false;
+            }
+            return true;
         }
     };
 
@@ -55,59 +158,99 @@ CellNavigation = (function() {
 
 CellEvents = (function() {
 
-    function _processTabKey(cellObj) {
+    function _selectAndActivateCell(obj) {
+        var cellEl = obj.getElementsByTagName('span')[0];
+        CellNavigation.goToCell(cellEl.id);
+        CellNavigation.currentCellId = cellEl.id;
+        CellNavigation.activateCurrentCell();
     }
 
-    function _processEnterKey(cellObj) {
-        CellNavigation.processDownArrow(cellObj);
+    function _processTabKey() {
+        CellNavigation.deactivateCurrentCell();
+        CellNavigation.goRight();
     }
 
-    function _processDigitKey(cellObj) {
-        if (data.clearFieldIfDigit) {
-            cellObj.innerHTML = '';
-            data.clearFieldIfDigit = false;
+    function _processEscapeKey() {
+        CellNavigation.deactivateCurrentCell();
+        CellNavigation.goToCell(CellNavigation.currentCellId);
+    }
+
+    function _processDeleteKey() {
+        if (CellNavigation.currentCellActivationStatus === CellCtrls.INACTIVE) {
+            CellNavigation.clearCurrentCell();
         }
     }
 
-    return {
-        mouseover: function() {
-            var el = this.parentNode;
-            el.style.backgroundColor = '#e5eecc';
-        },
+    function _processEnterKey() {
+        if (CellNavigation.currentCellActivationStatus === CellCtrls.INACTIVE) {
+            CellNavigation.activateCurrentCell(CellCtrls.BY_ENTER_KEY);
+        }
+        else {
+            CellNavigation.deactivateCurrentCell();
+            CellNavigation.goDown();
+        }
+    }
 
-        mouseout: function() {
-            var el = this.parentNode;
-            el.style.backgroundColor = '';
+    function _processActivatingSymbolKey() {
+        if (CellNavigation.currentCellActivationStatus === CellCtrls.INACTIVE) {
+            CellNavigation.activateCurrentCell();
+            CellNavigation.clearCurrentCellDisplay();
+        }
+    }
+
+    // symbols that can be used to activate a cell.  basically, these are the symbols that can occur at the beginning of a cell.
+    //   includes all digits, letters, decimal point, equals, and negative.
+    function _isActivatingSymbol(k) {
+        if (k >= 48 && k <= 57) return true; // qwerty digits
+        if (k >= 96 && k <= 105) return true; // keypad digits
+        if (k >= 65 && k <= 90) return true; // alphabet
+        if (k === 190 || k === 110) return true; // decimal point (qwerty || keypad)
+        if (k === 107) return true; // equals sign (also plus sign) in Firefox
+        if (k === 187) return true; // equals sign (also plus sign) in Chrome -- and, it looks like, elsewhere
+        if (k === 189 || k === 109) return true; // negative sign (qwerty || keypad)
+        return false;
+    }
+
+    return {
+        click: function() {
+            _selectAndActivateCell(this);
         },
 
         keydown: function(e) {
             e = e || window.event;
             var k = e.keyCode;
+console.log(k);
             var state = true;
 
             switch (true) {
-                case k >= 48 && k <= 57: // qwerty digits 
-                case k >= 96 && k <= 105: // keypad digits
-                    _processDigitKey(this);
+                case _isActivatingSymbol(k):
+                    _processActivatingSymbolKey();
                     break;
                 case k === 9:
-                    _processTabKey(this);
-                    break;
-                case k === 13:
-                    _processEnterKey(this);
+                    _processTabKey();
                     state = false;
                     break;
+                case k === 13:
+                    _processEnterKey();
+                    state = false;
+                    break;
+                case k === 27:
+                    _processEscapeKey();
+                    break;
                 case k === 37: // up arrow
-                    CellNavigation.processLtArrow(this);
+                    state = CellNavigation.goLeft();
                     break;
                 case k === 38: // up arrow
-                    CellNavigation.processUpArrow(this);
+                    state = CellNavigation.goUp();
                     break;
                 case k === 39: // up arrow
-                    CellNavigation.processRtArrow(this);
+                    state = CellNavigation.goRight();
                     break;
                 case k === 40: // down arrow
-                    CellNavigation.processDownArrow(this);
+                    state = CellNavigation.goDown();
+                    break;
+                case k === 46:
+                    _processDeleteKey();
                     break;
                 default:
             }
@@ -119,7 +262,6 @@ CellEvents = (function() {
             var cell = CellManager.cells[this.id];
             var formula = cell.formula;
             var value = cell.value;
-            el.style.backgroundColor = '#e5eecc';
             if (value != formula) {
                 this.innerHTML = '=' + formula;
             }
@@ -133,15 +275,6 @@ CellEvents = (function() {
             var el = this.parentNode;
             el.style.backgroundColor = '';
             CellManager.checkStatus(this);
-        }
-    };
-})();
-
-
-CellManager = (function() {
-    return {
-        checkStatus: function() {
-            console.log('Need spreadsheet.js');
         }
     };
 })();
@@ -167,12 +300,11 @@ InitCell = (function() {
 
         createWithCoords: function(x, y) {
             var el = document.createElement('span');
-            el.contentEditable = true;
-            el.onmouseover = CellEvents.mouseover;
-            el.onmouseout = CellEvents.mouseout;
+//            el.contentEditable = true;
+//            el.onmouseover = CellEvents.mouseover;
+//            el.onmouseout = CellEvents.mouseout;
             el.onfocus = CellEvents.focus;
             el.onblur = CellEvents.blur;
-            el.onkeydown = CellEvents.keydown;
             el.style.display = 'block';
             el.style.width = '100%';
             el.style.height = '100%';
@@ -184,7 +316,7 @@ InitCell = (function() {
 })();
 
 
-Table = (function() {
+Spreadsheet = (function() {
     var tableEl, tableBodyEl, trEl, tdEl;
 
     function _makeTableElement() {
@@ -204,6 +336,8 @@ Table = (function() {
 
         if (y === 0) cellEl = 'th';
 
+        tdEl = document.createElement(cellEl);
+
         if (y === 0 && x > 0) {
             // column label
             cellSetup = InitCell.createWithLabel(String.fromCharCode(x + 64));
@@ -214,14 +348,21 @@ Table = (function() {
         }
         else if (x > 0 && y > 0) {
             cellSetup = InitCell.createWithCoords(x, y);
+            tdEl.onclick = CellEvents.click;
         }
-        tdEl = document.createElement(cellEl);
         tdEl.appendChild(cellSetup);
 
         return tdEl;
     }
 
+    function _makeStageCell() {
+        var stage = document.createElement('span');
+        return stage;
+    }
+
     return {
+        stageCell: null,
+
         tableObject: null,
 
         build: function(rows, cols) {
@@ -243,6 +384,7 @@ Table = (function() {
         },
 
         display: function() {
+            document.onkeydown = CellEvents.keydown;
             var el = document.getElementById('table-container');
             el.appendChild(this.tableObject);
         }
@@ -258,6 +400,8 @@ var spreadsheetParams = {
 };
 
 window.onload = function() {
-    Table.build(spreadsheetParams.rows, spreadsheetParams.cols);
-    Table.display();
+    Spreadsheet.build(spreadsheetParams.rows, spreadsheetParams.cols);
+    Spreadsheet.display();
+    CellManager.initializeCells();
+    CellNavigation.goToCell('A1');
 };

@@ -43,45 +43,6 @@ Formula.prototype.raiseToPower = function(x) {
 };
 
 
-/*
-CellDictionary = (function() {
-    var coordPattern = /([a-zA-Z])(\d+)/,
-        cellRefMemo = [],
-        literal;
-
-    var _cellCoordsToNdx = function(coords) {
-        var matchCoord,
-            letter, x, y,
-            ndx = 0;
-        if (matchCoord = coordPattern.exec(coords)) {
-            letter = matchCoord[1].charCodeAt(0);
-            y = matchCoord[2] - 1;
-            if (letter > 90) {
-                x = letter - 97;
-            }
-            else {
-                x = letter - 65;
-            }
-            ndx = data.cols * y + x;
-        }
-        return ndx;
-    };
-
-
-    return {
-        lookup: function(coords) {
-            if (!cellRefMemo[coords]) {
-                cellRefMemo[coords] = _cellCoordsToNdx(coords);
-            }
-            cellNdx = coords.toUpperCase();
-            literal = cells[cellNdx].value;
-            return literal;
-        }
-    };
-})();
-*/
-
-
 
 Parser = (function () {
     var nextNdx = 0;
@@ -227,18 +188,3 @@ Parser = (function () {
     };
 
 })();
-
-
-/*
-var cells = [];
-for (var y = 0; y < data.rows; y++) {
-    for (var x = 0; x < data.cols; x++) {
-        linearNdx = y*data.cols + x;
-        cells[linearNdx] = { value: linearNdx*linearNdx };
-    }
-}
-
-value = '=c1+b2';
-value = Parser.parse(formula);
-console.log('Value: ' + value);
-*/
