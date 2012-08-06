@@ -3,33 +3,11 @@
 <head>
   <title>Spreadsheet</title>
   <meta charset="UTF-8"/>
-  <script type="text/javascript" src="shim.js"></script>
-  <script type="text/javascript" src="spreadsheet.js"></script>
-  <script type="text/javascript" src="cellmanager.js"></script>
-  <script type="text/javascript" src="parser.js"></script>
-  <style type="text/css">
-    #table-container > table, th, td {
-        border: 1px solid black;
-        font-size:10pt;
-        font-family: arial;
-    }
-    #table-container > table {
-        border-collapse: collapse;
-    }
-    #table-container td {
-        width:50px;
-        height:15px;
-        padding-right:5px;
-    }
-    #table-container th {
-        background:#f90;
-    }
-    #table-container td:first-child {
-        background:#f90;
-        text-align:right;
-        width:20px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/spreadsheet.css"/>
+  <script type="text/javascript" src="js/shim.js"></script>
+  <script type="text/javascript" src="js/spreadsheet.js"></script>
+  <script type="text/javascript" src="js/cellmanager.js"></script>
+  <script type="text/javascript" src="js/parser.js"></script>
 </head>
 <body>
 <div id="table-container">
