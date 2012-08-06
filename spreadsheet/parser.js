@@ -161,7 +161,8 @@ Parser = (function () {
             }
             ndx++;
         }
-        return working;
+        value = _arithmetic(working);
+        return value;
     };
 
 
@@ -171,6 +172,7 @@ Parser = (function () {
             literal;
         while (matchCells = cellReferences.exec(formula)) {
             cellCoords = matchCells[1];
+            Parser.cellsReferenced.push(cellCoords);
             literal = CellManager.lookup(cellCoords);
             literal = literal || 0;
             formula = formula.replace(cellCoords, literal);
@@ -210,11 +212,17 @@ Parser = (function () {
 
 
     return {
-       parse: function(formula) {
+        cellsReferenced: [],
+
+        parse: function(formula) {
+            // initialize array of cells to add as publishers.
+            this.cellsReferenced = [];
     //        var reduced = _processFunctions(formula);
+            // _replaceReference returns an equation containing literal numbers, operators, and parentheses.
             var literal = _replaceReferences(formula);
-            var simple = _parse(literal);
-            return _arithmetic(simple);
+            // result should be a number, the value to display in the spreadsheet cell.
+            var result = _parse(literal);
+            return result;
         }
     };
 

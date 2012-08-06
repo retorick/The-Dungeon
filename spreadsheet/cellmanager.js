@@ -3,6 +3,8 @@ function Cell(id) {
     this.id = id;
     this.value = '';
     this.formula = '';
+    this.cellsToListenTo = [];
+    this.listeningTo = [];
 }
 
 Cell.prototype.propagateChange = function() {
@@ -11,6 +13,7 @@ Cell.prototype.propagateChange = function() {
     var newValue = this.value;
     for (ndx in this.listeners) {
         cell = this.listeners[ndx];
+        newValue = Parser.parse(cell.formula);
         cell.updateValue(newValue);
     }
     return this;
@@ -27,6 +30,9 @@ Cell.prototype.beginListening = function(cell) {
     if (!alreadyListening) {
         cell.listeners.push(this);
     }
+console.log('beginListening');
+console.log(cell.id + ' listeners:');
+console.log(cell.listeners);
     return this;
 };
 
@@ -40,7 +46,15 @@ Cell.prototype.updateValue = function(newValue) {
 
 
 Cell.prototype.updateFormula = function(newFormula) {
+    thisCell = this;
     this.formula = newFormula;
+    this.cellsToListenTo.forEach(
+        function(id) {
+            var cellToListenTo = CellManager.cells[id];
+console.log(thisCell.id + ' should begin listening to ' + cellToListenTo.id);
+            thisCell.beginListening(cellToListenTo);
+        }
+    );
 };
 
 
@@ -69,11 +83,12 @@ CellManager = (function() {
         checkStatus: function(obj) {
             var id = obj.id;
             var currentFormula = this.cells[id].formula;
-            var newFormula = obj.innerHTML;
+            var newFormula = obj.innerHTML.toUpperCase();
             var newValue;
             if (newFormula.charAt(0) === '=') {
                 newFormula = newFormula.substr(1);
                 newValue = Parser.parse(newFormula);
+                this.cells[id].cellsToListenTo = Parser.cellsReferenced;
             }
             else {
                 newValue = newFormula;
@@ -85,7 +100,7 @@ CellManager = (function() {
         },
 
         lookup: function(coords) {
-            cellNdx = coords.toUpperCase();
+            cellNdx = coords;
             literal = this.cells[cellNdx].value;
             return literal;
         }
