@@ -106,35 +106,35 @@ Parser = (function () {
     };
 
     // For now, we're going to not worry about processing functions.
-    var _processFunctions = function(formula) {
-        var functionPattern = /(sum|avg)/g;
+    var _processRangeFunctions = function(formula) {
+        var functionPattern = /(SUM|AVG|MAX|MIN)\(([A-Z]\d{1,2}):([A-Z]\d{1,2})\)/g;
         var matchedFunction = [];
         while (matchedFunction = functionPattern.exec(formula)) {
+            match = matchedFunction[0];
             fn = matchedFunction[1];
-            fnargs = _getFunctionArgs(formula, fn);
+            args = matchedFunction.slice(2,4);
+            data = _grabValuesInRange(args);
+            value = aggregate[fn](data);
+            formula = formula.replace(match, value);
             
         }
         return formula;
     };
 
-    var _getFunctionArgs = function(formula, fn) {
-        pos = formula.indexOf(fn) + fn.length+1; // put just after opening paren.
-        var parenlevel = 1;
-        var args = '';
-        var formulaLength = formula.length;
-        while (parenlevel > 0 && pos < formulaLength) {
-            args += formula.charAt(pos);
-            pos++;
-            if (formula.charAt(pos) == '(') {
-                parenlevel++;
-            }
-            else if (formula.charAt(pos) == ')') {
-                parenlevel--;
+    var _grabValuesInRange = function(range) {
+        var id,
+            start = CellCtrls.idToCoords(range[0]),
+            end = CellCtrls.idToCoords(range[1]),
+            values = [];
+        for (var x = start.x; x <= end.x; x++) {
+            for (var y = start.y; y <= end.y; y++) {
+                id = CellCtrls.coordsToId(x, y);
+                Parser.cellsReferenced.push(id);
+                values.push(CellManager.cells[id].value);
             }
         }
-        return args;
+        return values;
     };
-
 
     return {
         cellsReferenced: [],
@@ -142,9 +142,9 @@ Parser = (function () {
         parse: function(formula) {
             // initialize array of cells to add as publishers.
             this.cellsReferenced = [];
-    //        var reduced = _processFunctions(formula);
+            var reduced = _processRangeFunctions(formula);
             // _replaceReference returns an equation containing literal numbers, operators, and parentheses.
-            var literal = _replaceReferences(formula);
+            var literal = _replaceReferences(reduced);
             // result should be a number, the value to display in the spreadsheet cell.
             var result = _parse(literal);
             return result;

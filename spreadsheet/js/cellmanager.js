@@ -95,8 +95,7 @@ CellManager = (function() {
             var newValue;
             if (newFormula.charAt(0) === '=') {
                 newFormula = newFormula.toUpperCase();
-                newFormula = newFormula.substr(1);
-                newValue = Parser.parse(newFormula);
+                newValue = Parser.parse(newFormula.substr(1));
                 this.cells[id].cellsToListenTo = Parser.cellsReferenced;
             }
             else {

@@ -13,6 +13,20 @@ CellCtrls = (function() {
     };
 })();
 
+CellCtrls.idToCoords = function() {
+    var id = arguments.length == 1 ? arguments[0] : CellNavigation.currentCellId,
+        x = id.charCodeAt(0) - 64,
+        y = id.substr(1);
+    return { x: x, y: 1*y };
+};
+
+CellCtrls.coordsToId = function(x, y) {
+    var letter = String.fromCharCode(x + 64),
+        number = y,
+        targetId = letter + number;
+    return targetId;
+};
+
 CellCtrls.activateCurrentCell = function() {
     // how the current cell was activated.  default is by symbol key.
     var howActivated = arguments.length === 1 ? arguments[0] : CellCtrls.BY_SYMBOL_KEY;
@@ -27,7 +41,7 @@ CellCtrls.activateCurrentCell = function() {
     // value is what the cell displays; formula is the calculation that produces value.
     // if the cell is active, it needs to show the formula.
     if (value != formula) {
-        el.innerHTML = '=' + formula;
+        el.innerHTML = formula;
     }
     else {
         el.innerHTML = value;
@@ -41,6 +55,14 @@ CellCtrls.deactivateCurrentCell = function() {
     cell.contentEditable = false;
     cell.blur();
     CellNavigation.currentCellActivationStatus = CellCtrls.INACTIVE;
+};
+
+CellCtrls.revertCell = function() {
+    var id = CellNavigation.currentCellId,
+        cell = CellManager.cells[id],
+        el = document.getElementById(id);
+    el.innerHTML = cell.formula;
+    
 };
 
 CellCtrls.clearCurrentCellDisplay = function() {
@@ -89,7 +111,6 @@ CellNavigation = (function() {
         currentCellId: 'A1',
 
         currentCellActivationStatus: CellCtrls.INACTIVE, // INACTIVE || BY_ENTER_KEY || BY_SYMBOL_KEY
-
 
         goToCell: function(id) {
             var cell = CellManager.cells[id];
@@ -170,14 +191,19 @@ CellEvents = (function() {
     }
 
     function _processEscapeKey() {
-        CellCtrls.deactivateCurrentCell();
-        CellNavigation.goToCell(CellNavigation.currentCellId);
+        if (CellNavigation.currentCellActivationStatus !== CellCtrls.INACTIVE) {
+            CellCtrls.revertCell();
+            CellCtrls.deactivateCurrentCell();
+            CellNavigation.goToCell(CellNavigation.currentCellId);
+        }
     }
 
     function _processDeleteKey() {
         if (CellNavigation.currentCellActivationStatus === CellCtrls.INACTIVE) {
             CellCtrls.clearCurrentCell();
+            return false;
         }
+        return true;
     }
 
     function _processEnterKey() {
@@ -192,8 +218,8 @@ CellEvents = (function() {
 
     function _processActivatingSymbolKey() {
         if (CellNavigation.currentCellActivationStatus === CellCtrls.INACTIVE) {
-            CellCtrls.activateCurrentCell();
             CellCtrls.clearCurrentCellDisplay();
+            CellCtrls.activateCurrentCell();
         }
     }
 
@@ -247,8 +273,9 @@ CellEvents = (function() {
                 case k === 40: // down arrow
                     state = CellNavigation.goDown();
                     break;
+                case k === 8:
                 case k === 46:
-                    _processDeleteKey();
+                    state = _processDeleteKey();
                     break;
                 default:
             }
@@ -256,12 +283,12 @@ CellEvents = (function() {
         },
 
         focus: function() {
-            var el = this.parentNode;
+//            var el = this.parentNode;
             var cell = CellManager.cells[this.id];
             var formula = cell.formula;
             var value = cell.value;
             if (value != formula) {
-                this.innerHTML = '=' + formula;
+                this.innerHTML = formula;
             }
             else {
                 this.innerHTML = value;
