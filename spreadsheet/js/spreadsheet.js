@@ -27,6 +27,17 @@ CellCtrls.coordsToId = function(x, y) {
     return targetId;
 };
 
+CellCtrls.displayCellContent = function(cell) {
+    var formula = cell.formula;
+    var value = cell.value;
+    if (value != formula) {
+        this.innerHTML = formula;
+    }
+    else {
+        this.innerHTML = value;
+    }
+};
+
 CellCtrls.activateCurrentCell = function() {
     // how the current cell was activated.  default is by symbol key.
     var howActivated = arguments.length === 1 ? arguments[0] : CellCtrls.BY_SYMBOL_KEY;
@@ -283,17 +294,7 @@ CellEvents = (function() {
         },
 
         focus: function() {
-//            var el = this.parentNode;
-            var cell = CellManager.cells[this.id];
-            var formula = cell.formula;
-            var value = cell.value;
-            if (value != formula) {
-                this.innerHTML = formula;
-            }
-            else {
-                this.innerHTML = value;
-            }
-        
+            CellCtrls.displayCellContent(CellManager.cells[this.id]);
         },
 
         blur: function() {

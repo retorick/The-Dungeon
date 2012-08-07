@@ -8,7 +8,6 @@ Math.factorial = function(x) {
 
 
 Parser = (function () {
-    var nextNdx = 0;
     var cellReferences = /([a-zA-Z]+\d+)/g;
     var powPattern = /(\d*(\.\d+)?)\^(\d*(\.\d+)?)/g;
     var factPattern = /(\d+)!/g;
@@ -50,43 +49,61 @@ Parser = (function () {
 
     var _arithmetic = function(simple) {
         var result = 0;
-        simple = _processFactorial(simple);
-        simple = _processExponents(simple);
-        // make sure simple is clean before eval'ing:  remove everything but \d\. and the four operators.
-        simple = _clean(simple);
-        eval('result = ' + simple);
-        return result;
+        try {
+            if (typeof simple === 'string' && simple.length > 0) {
+                simple = _processFactorial(simple);
+                simple = _processExponents(simple);
+                // make sure simple is clean before eval'ing:  remove everything but \d\. and the four operators.
+                simple = _clean(simple);
+                eval('result = ' + simple);
+                return result;
+            }
+            else throw '[_arithmetic] Error in formula: check for imbalanced parentheses';
+        }
+        catch (e) {
+            console.log(e);
+        }
     };
 
 
-    var _parse = function(formula, ndx) {
+    var _parse = function(formula) {
         var char,
+            ndx = 0,
+            paren_depth = 0,
+            group = [''],
             paren,
-            value,
-            working = '';
+            value;
         formula = formula || '';
-        ndx = ndx || 0;
         while (ndx < formula.length) {
             char = formula.charAt(ndx);
 
             if (char === '(') {
-                paren = _parse(formula, ndx+1);
-                ndx = nextNdx; // get value stored in last recursion.
-                value = _arithmetic(paren);
-                working += ''+value; // not addition; string concatenation.
+                paren_depth++;
+                group[paren_depth] = '';
             }
 
             else if (char === ')') {
-                nextNdx = ndx;
-                return working;
+                value = _arithmetic(group[paren_depth]);
+                paren_depth--;
+                group[paren_depth] += '' + value;
             }
 
             else {
-                working += char;
+                group[paren_depth] += '' + char;
             }
             ndx++;
         }
-        value = _arithmetic(working);
+        try {
+            if (paren_depth == 0) {
+                value = _arithmetic(group[0]);
+            }
+            else throw '[_parse] Error in formula: check for imbalanced parentheses';
+        }
+        catch (e) {
+            console.log(e);
+            value = null;
+        }
+
         return value;
     };
 
@@ -94,13 +111,13 @@ Parser = (function () {
     var _replaceReferences = function(formula) {
         var matchCells,
             cellNdx,
-            literal;
+            cellValue;
         while (matchCells = cellReferences.exec(formula)) {
             cellCoords = matchCells[1];
             Parser.cellsReferenced.push(cellCoords);
-            literal = CellManager.lookup(cellCoords);
-            literal = literal || 0;
-            formula = formula.replace(cellCoords, literal);
+            cellValue = CellManager.lookup(cellCoords);
+            cellValue = cellValue || 0;
+            formula = formula.replace(cellCoords, cellValue);
         }
         return formula;
     };
