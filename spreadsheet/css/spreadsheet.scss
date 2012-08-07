@@ -1,6 +1,7 @@
 $label-bg: #eee;
 $label-color: #333;
 $label-font: normal 8pt arial, helvetica;
+$default-bg: white;
 $selected-bg: #e5eecc;
 $border-color: darken($label-bg,10%);
 
@@ -11,6 +12,7 @@ $border-color: darken($label-bg,10%);
 }
 #table-container > table {
     border-collapse: collapse;
+    background:$default-bg;
 }
 #table-container td {
     width:50px;

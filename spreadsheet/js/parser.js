@@ -64,6 +64,7 @@ Parser = (function () {
             paren,
             value,
             working = '';
+        formula = formula || '';
         ndx = ndx || 0;
         while (ndx < formula.length) {
             char = formula.charAt(ndx);

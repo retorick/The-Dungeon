@@ -4,7 +4,8 @@
   font-family: arial; }
 
 #table-container > table {
-  border-collapse: collapse; }
+  border-collapse: collapse;
+  background: white; }
 
 #table-container td {
   width: 50px;

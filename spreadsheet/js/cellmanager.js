@@ -21,8 +21,8 @@ Cell.prototype.propagateChange = function() {
     var cell;
     // here, we may want to compute the value based on the formula, not rely on a "value" property.
     var newValue = this.value;
-    for (ndx in this.listeners) {
-        cell = this.listeners[ndx];
+    for (var i = 0, j = this.listeners.length; i < j; i++) {
+        cell = this.listeners[i];
         newValue = Parser.parse(cell.formula);
         cell.updateValue(newValue);
     }
