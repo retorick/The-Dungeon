@@ -45,6 +45,7 @@ CellCtrls.activateCurrentCell = function() {
     var id = CellNavigation.currentCellId,
         el = document.getElementById(id),
         cell = CellManager.cells[id],
+        cellContent = '',
         formula = cell.formula,
         value = cell.value;
 
@@ -52,10 +53,16 @@ CellCtrls.activateCurrentCell = function() {
     // value is what the cell displays; formula is the calculation that produces value.
     // if the cell is active, it needs to show the formula.
     if (value != formula) {
-        el.innerHTML = formula;
+        cellContent = formula;
     }
     else {
-        el.innerHTML = value;
+        cellContent = value;
+    }
+    if (howActivated === CellCtrls.BY_SYMBOL_KEY) {
+        el.innerHTML = '';
+    }
+    else {
+        el.innerHTML = cellContent;
     }
     el.focus();
     CellNavigation.currentCellActivationStatus = howActivated;

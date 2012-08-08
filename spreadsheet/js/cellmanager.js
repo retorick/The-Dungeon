@@ -38,6 +38,35 @@ Cell.prototype.propagateChange = function() {
 };
 
 
+Cell.prototype.hasListener = function(cellObj) {
+    var hasListener = false;
+    var publisher = this;
+
+    function _checkForListener(publisher) {
+        var hasListener = false;
+        var obj, ndx = 0;
+        while (hasListener === false && ndx < publisher.listeners.length) {
+            obj = publisher.listeners[ndx];
+            if (obj === cellObj) {
+                hasListener = true;
+                
+            }
+            else {
+                if (obj.listeners.length > 0) {
+                    hasListener = _checkForListener(obj);
+                }
+            }
+            ndx++;
+        }
+        return hasListener;
+    }
+
+    hasListener = _checkForListener(publisher);
+
+    return hasListener;
+};
+
+
 /*
  * beginListening method:  receives a Cell object (cellObj) from which the 
  *      context Cell object needs to receive notifications of updates.
@@ -56,8 +85,19 @@ Cell.prototype.beginListening = function(cellObj) {
             return that === c;
         }
     );
-    if (!alreadyListening) {
-        cellObj.listeners.push(this);
+    var listensTo = this.hasListener(cellObj);
+    try {
+        if (listensTo) {
+            this.value = null;
+            this.error = true;
+            throw '[beginListening] ' + this.id + ' already listens to ' + cellObj.id + '.  Circular reference.';
+        }
+        else if (!alreadyListening) {
+            cellObj.listeners.push(this);
+        }
+    }
+    catch (e) {
+        console.log(e);
     }
     return this;
 };
