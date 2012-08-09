@@ -1,7 +1,11 @@
+#table-container {
+  clear: left;
+  float: left;
+  position: relative; }
+
 #table-container > table, th, td {
   border: 1px solid #d4d4d4;
-  font-size: 9pt;
-  font-family: arial; }
+  font: normal 9pt arial, helvetica; }
 
 #table-container > table {
   border-collapse: collapse;
@@ -32,3 +36,72 @@
 
 .selected-cell {
   background: #e5eecc; }
+
+#focused-cell-wrapper {
+  background: white;
+  width: 300px;
+  height: 15px;
+  border: 1px solid #d4d4d4;
+  margin-bottom: 10px;
+  font: normal 9pt arial, helvetica; }
+
+#focused-cell-label {
+  float: left;
+  height: 15px;
+  width: 24px;
+  background: #d9d9d9;
+  color: #333333;
+  font-weight: bold;
+  text-align: right;
+  padding: 0 3px; }
+
+#focused-cell-content {
+  float: left;
+  width: 264px;
+  height: 15px;
+  padding: 0 3px;
+  background: #eee; }
+
+#help-button {
+  background: none repeat scroll 0 0 #FF9900;
+  border-radius: 100px 100px 100px 100px;
+  float: right;
+  height: 15px;
+  width: 45px;
+  font: bold 10px arial, helvetica;
+  text-align: center;
+  text-shadow: 0px 1px 1px #666;
+  color: white;
+  cursor: pointer; }
+
+#btn-close-help {
+  position: absolute;
+  left: 14px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #536812;
+  cursor: pointer; }
+
+#btn-close-help-x {
+  font: 10px verdana;
+  color: #536812;
+  margin-left: 1px;
+  margin-top: -3px;
+  padding: 0; }
+
+.help {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  width: 450px;
+  height: 150px;
+  background: rgba(229, 238, 204, 0.9);
+  border: 1px solid #98bf21;
+  padding: 5px;
+  display: none; }
+
+.help iframe {
+  border: none;
+  margin: 20px 0 5px 0;
+  width: 100%;
+  height: 125px; }

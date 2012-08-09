@@ -61,7 +61,7 @@ Cell.prototype.hasListener = function(cellObj) {
         return hasListener;
     }
 
-    hasListener = _checkForListener(publisher);
+    hasListener = cellObj === publisher || _checkForListener(publisher);
 
     return hasListener;
 };

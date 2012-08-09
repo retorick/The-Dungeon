@@ -1,12 +1,22 @@
-/*
- * CellNavigation object:  handles arrow key navigation.
- */
+FocusedContentEvents = (function() {
+    return {
+        click: function(e) {
+            e = e || window.event;
+            this.contentEditable = true;
+        },
+
+        zenzizenzizenzic: null
+    }
+})();
+
+
 CellCtrls = (function() {
     return {
         // these function as scoped "constants" for the currentCellActivationStatus property.
         INACTIVE: 0,
         BY_ENTER_KEY: 1,
         BY_SYMBOL_KEY: 2,
+        BY_CLICK: 4,
 
         // so I don't have to worry about the above stuff not having the trailing comma.
         zenzizenzizenzic: null
@@ -98,6 +108,9 @@ CellCtrls.clearCurrentCell = function() {
 
 
 
+/*
+ * CellNavigation object:  handles arrow key navigation.
+ */
 CellNavigation = (function() {
 
     // Get x, y coordinates for current cell.  Current cell is stored in global CellNavigation object.
@@ -115,6 +128,7 @@ CellNavigation = (function() {
             toCell = document.getElementById(toId).parentNode;
         fromCell.className = '';
         toCell.className = 'selected-cell';
+        document.getElementById('focused-cell-content').innerHTML = CellManager.cells[toId].formula;
         CellNavigation.currentCellId = toId;
     }
 
@@ -196,11 +210,20 @@ CellNavigation = (function() {
 
 CellEvents = (function() {
 
-    function _selectAndActivateCell(obj) {
+    function _enterFocused(el) {
+        console.log(el);
+        el.contentEditable = true;
+    }
+
+    function _selectCell(obj) {
         var cellEl = obj.getElementsByTagName('span')[0];
         CellNavigation.goToCell(cellEl.id);
         CellNavigation.currentCellId = cellEl.id;
-        CellCtrls.activateCurrentCell();
+//        CellCtrls.activateCurrentCell(CellCtrls.BY_CLICK);
+    }
+
+    function _processClick(el) {
+        _selectCell(el);
     }
 
     function _processTabKey() {
@@ -256,11 +279,13 @@ CellEvents = (function() {
 
     return {
         click: function() {
-            _selectAndActivateCell(this);
+            _processClick(this);
+//            _selectCell(this);
         },
 
         keydown: function(e) {
             e = e || window.event;
+            var target = e.target || e.srcElement;
             var k = e.keyCode;
             var state = true;
 
@@ -333,9 +358,6 @@ InitCell = (function() {
 
         createWithCoords: function(x, y) {
             var el = document.createElement('span');
-//            el.contentEditable = true;
-//            el.onmouseover = CellEvents.mouseover;
-//            el.onmouseout = CellEvents.mouseout;
             el.onfocus = CellEvents.focus;
             el.onblur = CellEvents.blur;
             el.className = 'spreadsheet-cell';
@@ -391,6 +413,28 @@ Spreadsheet = (function() {
         return stage;
     }
 
+    function _makeFocusedContentElement() {
+        var focusedWrapper = document.createElement('div');
+        var focusedLabel = document.createElement('div');
+        var focusedContent = document.createElement('div');
+        focusedWrapper.appendChild(focusedLabel);
+        focusedWrapper.appendChild(focusedContent);
+        focusedWrapper.id = 'focused-cell-wrapper';
+//        focusedWrapper.onclick = CellEvents.click;
+        focusedLabel.id = 'focused-cell-label';
+        focusedLabel.innerHTML = "Fx:";
+        focusedContent.id = 'focused-cell-content';
+        return focusedWrapper;
+    }
+
+    function _makeHelpButton() {
+        var helpButton = document.createElement('div');
+        helpButton.id='help-button';
+        helpButton.innerHTML = 'Help';
+        helpButton.onclick = Help.display;
+        return helpButton;
+    }
+
     return {
         stageCell: null,
 
@@ -411,12 +455,16 @@ Spreadsheet = (function() {
                 tableBodyEl.appendChild(trEl);
             }
             tableEl.appendChild(tableBodyEl);
+            this.focusedContentEl = _makeFocusedContentElement();
+            this.helpButton = _makeHelpButton();
             this.tableObject = tableEl;
         },
 
         display: function() {
             document.onkeydown = CellEvents.keydown;
             var el = document.getElementById('table-container');
+            el.appendChild(this.helpButton);
+            el.appendChild(this.focusedContentEl);
             el.appendChild(this.tableObject);
         }
     };
@@ -432,4 +480,6 @@ window.onload = function() {
     Spreadsheet.display();
     CellManager.initializeCells();
     CellNavigation.goToCell('A1');
+Help.init();
+Help.instructions();
 };
