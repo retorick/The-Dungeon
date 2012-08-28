@@ -1,11 +1,18 @@
+.answer_container {
+  position: absolute;
+  left: 140px;
+  top: 8px;
+  z-index: 200;
+  font: 12px verdana; }
+
 .response {
   display: none;
   position: absolute;
-  top: 20px;
-  left: 100px;
+  top: 80px;
+  left: 160px;
   z-index: 100;
-  width: 200px;
-  height: 150px;
+  width: 180px;
+  height: 100px;
   background: white;
   border-radius: 20px;
   box-shadow: 2px 2px 2px gray;
@@ -19,4 +26,16 @@
   color: red; }
 
 .close {
-  display: block; }
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid black;
+  width: 10px;
+  height: 11px; }
+  .close > p {
+    position: relative;
+    margin: -3px 0 0 -1px;
+    padding: 0;
+    color: red;
+    font: bold 12px verdana;
+    cursor: pointer; }

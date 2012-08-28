@@ -16,7 +16,7 @@ QuizItemCollection = (function() {
 })();
 
 _QICollection = (function() {
-  var _addToPool, _addToQuizItems, _addToRemedial, _findKeyInPool, _getPoolSize, _pool, _putRemedialBackInPool, _quizItems, _refreshPool, _remedialPool, _remedialPoolObj, _removeFromPool;
+  var _addToPool, _addToQuizItems, _addToRemedial, _findKeyInPool, _getPoolSize, _pool, _putRemedialBackInPool, _quizItems, _refreshPool, _remedialPoolObj, _removeFromPool;
 
   function _QICollection() {}
 
@@ -26,7 +26,9 @@ _QICollection = (function() {
 
   _remedialPoolObj = {};
 
-  _remedialPool = [];
+  /*
+      Restock pool from quiz items list.
+  */
 
   _refreshPool = function() {
     var i, q, _len;
@@ -37,23 +39,47 @@ _QICollection = (function() {
     return _pool;
   };
 
+  /*
+      Private function for adding a quiz item object to the list of quiz items.
+  */
+
   _addToQuizItems = function(qiObj) {
     _quizItems.push(qiObj);
   };
+
+  /*
+      Private function for adding a quiz item object to the quiz pool.
+  */
 
   _addToPool = function(qiObj) {
     _pool.push(qiObj);
   };
 
+  /*
+      When the user gets an item wrong, add it as a key/value pair to the remedial
+      pile.
+  */
+
   _addToRemedial = function(qiObj) {
     _remedialPoolObj[qiObj.id] = qiObj;
   };
+
+  /*
+      When an item has been presented, remove it from the pool, so it won't be
+      selected again during the current quiz cycle.
+      Add the item to the remedial pile if the user got it wrong.
+  */
 
   _removeFromPool = function(ndx, remedial) {
     var _removedItem;
     _removedItem = _pool.splice(ndx, 1)[0];
     if (remedial) _addToRemedial(_removedItem);
   };
+
+  /*
+      Once the user has gone through all the quiz items, dump anything in the
+      remedial pile back into the pool.
+  */
 
   _putRemedialBackInPool = function() {
     var _key, _qi;
@@ -66,6 +92,11 @@ _QICollection = (function() {
     return _pool.length;
   };
 
+  /*
+      Go through the items in the pool, and get the one whose key matches the
+      key this is searching for.  The key is the id property of the item.
+  */
+
   _findKeyInPool = function(key) {
     var i, p, _len;
     for (i = 0, _len = _pool.length; i < _len; i++) {
@@ -74,6 +105,10 @@ _QICollection = (function() {
     }
     return null;
   };
+
+  /*
+      Return the size of the pool, for use in selecting a random quiz item.
+  */
 
   _getPoolSize = function() {
     return _pool.length;
@@ -146,9 +181,10 @@ QuizItem = (function() {
     return this.highlightFn();
   };
 
-  QuizItem.prototype.hasBeenAsked = function() {
-    return this.asked;
-  };
+  /*
+      hasBeenAsked: ->
+          @asked
+  */
 
   QuizItem.prototype.isCorrectAnswer = function(answer) {
     var _correct;

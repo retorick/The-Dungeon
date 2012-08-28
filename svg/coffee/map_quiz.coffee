@@ -11,8 +11,8 @@ MapQuiz = (->
         document.getElementById('state_name').focus()
         return
 
-    _showResponseCorrect = ->
-        document.getElementById('correct').style.display = 'block'
+    _handleResponseCorrect = ->
+        #document.getElementById('correct').style.display = 'block'
         return
 
     _showResponseIncorrect = (expected) ->
@@ -47,12 +47,10 @@ MapQuiz = (->
     obj = {
         init: (rObj) ->
             # initialize input field.
-            document.getElementById('check_answer').onclick = ->
+            document.getElementById('answer').onblur = ->
                 _answer = document.getElementById('answer').value
                 MapQuiz.checkAnswer(_answer)
                 false
-
-            document.getElementById('answer').focus()
 
             @rObj = rObj
 
@@ -88,7 +86,7 @@ MapQuiz = (->
             _isCorrect = self.currentQuizItem.isCorrectAnswer(answer)
             _getNextItem = true
             if _isCorrect
-                _showResponseCorrect()
+                _handleResponseCorrect()
             else
                 _showResponseIncorrect(self.currentQuizItem.correctResponse)
                 _getNextItem = false

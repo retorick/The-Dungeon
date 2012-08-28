@@ -147,10 +147,10 @@ class QuizItem
     highlight: ->
         @highlightFn()
 
-###
+    ###
     hasBeenAsked: ->
         @asked
-###
+    ###
 
     isCorrectAnswer: (answer) ->
         _correct = answer is @correctResponse

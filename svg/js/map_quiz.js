@@ -1,7 +1,7 @@
 var MapQuiz;
 
 MapQuiz = (function() {
-  var obj, self, _callAttentionToItem, _hideResponse, _presentItem, _quizItems, _removeAttentionFromItem, _selectRandomItem, _showResponseCorrect, _showResponseIncorrect;
+  var obj, self, _callAttentionToItem, _handleResponseCorrect, _hideResponse, _presentItem, _quizItems, _removeAttentionFromItem, _selectRandomItem, _showResponseIncorrect;
   self = this;
   _quizItems = QuizItemCollection.get();
   _hideResponse = function() {
@@ -14,9 +14,7 @@ MapQuiz = (function() {
     document.getElementById('state_name').value = '';
     document.getElementById('state_name').focus();
   };
-  _showResponseCorrect = function() {
-    document.getElementById('correct').style.display = 'block';
-  };
+  _handleResponseCorrect = function() {};
   _showResponseIncorrect = function(expected) {
     document.getElementById('expected').innerHTML = expected;
     document.getElementById('incorrect').style.display = 'block';
@@ -42,13 +40,12 @@ MapQuiz = (function() {
   };
   obj = {
     init: function(rObj) {
-      document.getElementById('check_answer').onclick = function() {
+      document.getElementById('answer').onblur = function() {
         var _answer;
         _answer = document.getElementById('answer').value;
         MapQuiz.checkAnswer(_answer);
         return false;
       };
-      document.getElementById('answer').focus();
       this.rObj = rObj;
       rObj.forEach(function(el) {
         return _quizItems.add(new QuizItem({
@@ -84,7 +81,7 @@ MapQuiz = (function() {
       _isCorrect = self.currentQuizItem.isCorrectAnswer(answer);
       _getNextItem = true;
       if (_isCorrect) {
-        _showResponseCorrect();
+        _handleResponseCorrect();
       } else {
         _showResponseIncorrect(self.currentQuizItem.correctResponse);
         _getNextItem = false;

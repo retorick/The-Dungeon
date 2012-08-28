@@ -13,22 +13,17 @@
 </head>
 <body>
 
-<input type="text" id="answer"/>
-<button id="check_answer">Submit</button>
-
-
 <div id="container" style="position:relative">
 
-<div id="correct" class="response">
-Correct!
-<button class="close">Close</button>
-</div>
+  <div class="answer_container">
+    State Capital
+    <input type="text" id="answer"/>
+  </div>
 
-<div id="incorrect" class="response">
-Wrong!
-<span id="expected"></span>
-<button class="close">Close</button>
-</div>
+  <div id="incorrect" class="response">
+    <div class="close"><p>x</p></div>
+    <p>Wrong!<br/><span id="expected"></span></p>
+  </div>
 
 </div>
 <script type="text/javascript">
@@ -37,28 +32,34 @@ Raphael(10, 10, 600, 400, function() {
     
     r.setStart();
     for (var state in us) {
-        var x = r.path(us[state].path)
+        r.path(us[state].path)
             .attr({stroke: 'white', fill: '#ccc', 'stroke-opacity': 0.5})
             .data('abbr', state)
             .data('name', us[state].name)
             .data('capital', us[state].capital);
     }
     var us_map = r.setFinish();
-    us_map.scale('.6, .6, 0, 0');
+    us_map.scale('.5, .5, 0, 0');
 
     var svg = document.getElementsByTagName('svg')[0];
-    document.getElementById('container').appendChild(svg);
+    $('#container').append(svg);
     MapQuiz.init(r);
     MapQuiz.beginQuiz();
 });
 
-var els = document.getElementsByClassName('close');
-for (var i = 0, j = els.length; i < j; i++) {
-    els[i].onclick = function(e) { e.target.parentNode.style.display = 'none'; };
-}
+$(function() {
+    $('#answer').val('').focus();
 
-window.onload = function() {
-};
+    $('#answer').focus(function() {
+        $(this).select();
+    });
+
+    $('#incorrect .close').click(function(e) {
+        $(this).parent().hide();
+        $('#answer').val('').focus();
+    });
+
+});
 </script>
 </body>
 </html>
