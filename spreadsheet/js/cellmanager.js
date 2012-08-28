@@ -10,14 +10,18 @@
  *      
  */
 function Cell(id) {
-    // array of cells that are listening to current cell.
+    // array of cell objects that are listening to current cell.
     this.listeners = [];
     this.id = id;
     this.value = '';
     this.formula = '';
-    this.error = false; // error in cell?
+    this.error = 0; // error in cell?
     // list gathered by parser each time a cell changes.
     this.cellsToListenTo = [];
+    // listensTo memo: array of cell objects to which the current cell is listening.
+    //       This is maintained to make it easy to unsubscribe from cells no longer
+    //       referenced in the formula.
+    this.listensTo = [];
 }
 
 
@@ -38,32 +42,44 @@ Cell.prototype.propagateChange = function() {
 };
 
 
-Cell.prototype.hasListener = function(cellObj) {
+/*
+ * hasListener method:  check the listeners chain for a cell to see if it includes
+ *      a particular cell.  The purpose for this is to detect circuluar references.
+ */
+Cell.prototype.hasListener = function(subscriber) {
+    var circularReferences = [];
     var hasListener = false;
     var publisher = this;
 
+    // _checkForListener gets called recursively, as each subscriber can also be a publisher.
     function _checkForListener(publisher) {
         var hasListener = false;
-        var obj, ndx = 0;
+        var _pub, ndx = 0;
         while (hasListener === false && ndx < publisher.listeners.length) {
-            obj = publisher.listeners[ndx];
-            if (obj === cellObj) {
+            _pub = publisher.listeners[ndx];
+//            circularReferences.push(_pub.id); // add each ID to reference path.
+            if (_pub === subscriber) {
                 hasListener = true;
-                
             }
             else {
-                if (obj.listeners.length > 0) {
-                    hasListener = _checkForListener(obj);
+                if (_pub.listeners.length > 0) {
+                    hasListener = _checkForListener(_pub);
                 }
             }
             ndx++;
         }
+        if (hasListener) {
+            circularReferences.push(_pub.id); // add each ID to reference path.
+        }
         return hasListener;
     }
 
-    hasListener = cellObj === publisher || _checkForListener(publisher);
+    if (subscriber === publisher || _checkForListener(publisher)) {
+        hasListener = true;
+        circularReferences.push(publisher.id);
+    }
 
-    return hasListener;
+    return circularReferences;
 };
 
 
@@ -78,28 +94,51 @@ Cell.prototype.hasListener = function(cellObj) {
  *      informed that B5 is listening for their values so that if either of them
  *      changes, it can change as well.  
  */
-Cell.prototype.beginListening = function(cellObj) {
+Cell.prototype.beginListening = function(publisher) {
     var that = this;
-    var alreadyListening = cellObj.listeners.some(
+    var alreadyListening = publisher.listeners.some(
         function(c) {
             return that === c;
         }
     );
-    var listensTo = this.hasListener(cellObj);
+    var circularReferences = this.hasListener(publisher);
     try {
-        if (listensTo) {
+        if (circularReferences.length > 0) {
+/*
+            circularReferences.forEach(
+                function(id) {
+                    CellManager.cells[id].value = null;
+                    CellManager.cells[id].error = 2;
+                    Cell.prototype.refreshCellDisplay.call(CellManager.cells[id]);
+                }
+            );
+*/
             this.value = null;
-            this.error = true;
-            throw '[beginListening] ' + this.id + ' already listens to ' + cellObj.id + '.  Circular reference.';
+            this.error = 2;
+            throw '[beginListening] Circular reference on ' + this.id;
         }
         else if (!alreadyListening) {
-            cellObj.listeners.push(this);
+            publisher.listeners.push(this);
+            this.listensTo.push(publisher);
         }
     }
     catch (e) {
         console.log(e);
     }
     return this;
+};
+
+
+/*
+ * stopListening method:  used when a cell's formula no longer contains a 
+ *      reference to a certain other cell.  The cell then needs to be removed
+ *      from that other cell's listeners array.
+ */
+Cell.prototype.stopListening = function(publisher) {
+    var ndx = publisher.listeners.indexOf(this);
+    publisher.listeners.splice(ndx, 1);    
+    ndx = this.listensTo.indexOf(publisher);
+    this.listensTo.splice(ndx, 1);
 };
 
 
@@ -114,6 +153,15 @@ Cell.prototype.beginListening = function(cellObj) {
  */
 Cell.prototype.subscribeToReferencedCells = function() {
     var thisCell = this;
+    this.listensTo.forEach(
+        function(cellObj) {
+            var id = cellObj.id;
+            // if the cell's new formula does not include cell references to cells this cell used to listen to, have it stop listening to them.
+            if (thisCell.cellsToListenTo.indexOf(id) === -1) {
+                thisCell.stopListening(cellObj);
+            }
+        }
+    );
     this.cellsToListenTo.forEach(
         function(id) {
             // cellObj is the Cell object for each cell whose ID is listed in cellsToListenTo.
@@ -161,16 +209,16 @@ Cell.prototype.setValueAndFormula = function(cellContent, isFormula) {
         this.cellsToListenTo = Parser.cellsReferenced;
     }
 
-    this.error = newValue === null; // will only occur with parse error in formula.
+    this.error = newValue === null ? 1 : 0; // will only occur with parse error in formula.
     if (newValue !== this.value) { // no need to update value and propagate change unless value has changed.
         this.value = newValue;
         this.propagateChange();    
     }
-    this.refreshCellDisplay(); // this actually doesn't need to happen if the cell contains a value that hasn't changed.
     if (newFormula !== this.formula) { // no need to update formula or subscriptions unless formula has changed.
         this.formula = newFormula;
-        this.subscribeToReferencedCells();
     }
+    this.subscribeToReferencedCells(); // this happens even for a literal value, since it includes a de-subscribe method.
+    this.refreshCellDisplay(); // this actually doesn't need to happen if the cell contains a value that hasn't changed.
 };
 
 
@@ -183,7 +231,16 @@ Cell.prototype.setValueAndFormula = function(cellContent, isFormula) {
  *      displayed.
  */
 Cell.prototype.refreshCellDisplay = function() {
-    document.getElementById(this.id).innerHTML = this.value === null ? '!ERROR' : this.value;
+    var cell = document.getElementById(this.id);
+    if (this.error === 1) {
+        cell.innerHTML = '!ERROR';
+    }
+    else if (this.error === 2) {
+        cell.innerHTML = '!REF';
+    }
+    else {
+        cell.innerHTML = this.value;
+    }
 };
 
 
@@ -248,52 +305,3 @@ CellManager = (function() {
 
     };
 })();
-/*
- * updateValue method:  update the value property of the Cell object.  If there
- *      is an error in the formula, the value is set to null and the error flag
- *      to true.
- *
- *      The value property is what's typically displayed in the cell; therefore
- *      an update to the value must be reflected on the screen.  This is the
- *      job of the refresh() method.
- *
- *      Also, when a value is updated, any cells containing formulas that refer
- *      to this cell must be notified of the change so that they can update
- *      their values.  This is the function of propagateChange(). 
- */
-/*
-Cell.prototype.updateValue = function(newValue) {
-    this.value = newValue;
-    this.error = newValue === null; // set or clear cell's error flag.
-console.log('Error in cell ' + this.id + '? ' + this.error);
-    this.refresh();
-    this.propagateChange();
-};
-*/
-
-
-/*
- * updateFormla method:  the object context, a Cell object, contains the cell's 
- *      value, formula, listeners, &c.  This method updates the formula and also
- *      subscribes (beginListening) the object to any cell objects referenced in 
- *      the formula (cellsToListenTo).
- *
- *      The cellsToListenTo is a sequential array of cell IDs, generated by the
- *      Parser object.  A cell ID is simply the cell reference string in 
- *      standard spreadsheet form; e.g., 'B7'. 
- */
-/*
-Cell.prototype.updateFormula = function(newFormula) {
-    var thisCell = this;
-    this.formula = newFormula;
-    this.cellsToListenTo.forEach(
-        function(id) {
-            // cellObj is the Cell object for each cell whose ID is listed in cellsToListenTo.
-            var cellObj = CellManager.cells[id];
-            thisCell.beginListening(cellObj);
-        }
-    );
-};
-*/
-
-
